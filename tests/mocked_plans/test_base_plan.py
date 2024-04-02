@@ -37,7 +37,7 @@ async def test_base_plan(_, sample_plans):
 
 @pytest.mark.asyncio
 @patch("cou.utils.nova_compute.get_instance_count", side_effect=[1, 0, 1])
-async def test_base_plan_non_empty(_, sample_plans,caplog):
+async def test_base_plan_non_empty(_, sample_plans, caplog):
     """Testing non-empty hypervisor logs."""
     args = CLIargs("plan", auto_approve=True)
     model, __ = sample_plans["base.yaml"]
@@ -53,3 +53,4 @@ async def test_base_plan_non_empty(_, sample_plans,caplog):
     )
     assert any(expected_log in message for message in caplog.messages), \
         f"Expected log message not found: '{expected_log}'"
+    
