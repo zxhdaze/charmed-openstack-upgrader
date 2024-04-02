@@ -565,7 +565,14 @@ async def _get_upgradable_hypervisors_machines(
     if cli_force:
         return nova_compute_machines
 
-    return await get_empty_hypervisors(nova_compute_units, analysis_result.model)
+    empty_hypervisors = await get_empty_hypervisors(nova_compute_units, analysis_result.model)
+
+    empty_hypervisor_names = {str(machine) for machine in empty_hypervisors}
+    all_hypervisor_names = {str(machine) for machine in nova_compute_machines}
+    skipped_hypervisor_names = all_hypervisor_names - empty_hypervisor_names
+    logger.info(f"Skipped (non-empty) hypervisors: {sorted(skipped_hypervisor_names)}")
+
+    return empty_hypervisors
 
 
 def _get_nova_compute_units_and_machines(

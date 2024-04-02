@@ -15,6 +15,7 @@
 from unittest.mock import patch
 
 import pytest
+import logging
 
 from cou.commands import CLIargs
 from cou.steps.analyze import Analysis
@@ -32,3 +33,23 @@ async def test_base_plan(_, sample_plans):
     plan = await generate_plan(analysis_results, args)
 
     assert str(plan) == exp_plan
+
+
+@pytest.mark.asyncio
+@patch("cou.utils.nova_compute.get_instance_count", side_effect=[1, 0, 1])
+async def test_base_plan_non_empty(_, sample_plans,caplog):
+    """Testing non-empty hypervisor logs."""
+    args = CLIargs("plan", auto_approve=True)
+    model, __ = sample_plans["base.yaml"]
+
+    with caplog.at_level(logging.INFO):
+        analysis_results = await Analysis.create(model)
+        await generate_plan(analysis_results, args)
+
+    expected_log = (
+        'Skipped (non-empty) hypervisors: ["Machine(machine_id=\'1\', apps=(\'nova-compute\', '
+        '\'ovn-chassis\'), az=\'az-0\')", "Machine(machine_id=\'3\', apps=(\'nova-compute\', '
+        '\'ovn-chassis\'), az=\'az-0\')"]'
+    )
+    assert any(expected_log in message for message in caplog.messages), \
+        f"Expected log message not found: '{expected_log}'"
